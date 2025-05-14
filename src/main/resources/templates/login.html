@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineAI - Đăng nhập</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideIn {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        .animate-slide-in {
+            animation: slideIn 0.5s ease-out;
+        }
+        .bg-cinema {
+            background: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)),
+                        url('/images/cinema-bg.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        .glass-effect {
+            background: rgba(17, 24, 39, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        .input-focus-effect {
+            transition: all 0.3s ease;
+        }
+        .input-focus-effect:focus {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        .btn-hover-effect {
+            transition: all 0.3s ease;
+        }
+        .btn-hover-effect:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        .social-btn {
+            transition: all 0.3s ease;
+        }
+        .social-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-cinema min-h-screen flex items-center justify-center p-4">
+    <div class="container mx-auto max-w-4xl">
+        <div class="flex flex-col md:flex-row rounded-2xl overflow-hidden shadow-2xl">
+            <!-- Left side - Branding -->
+            <div class="md:w-1/2 bg-gradient-to-br from-gray-900 to-gray-800 p-8 text-white animate-slide-in">
+                <div class="h-full flex flex-col justify-center">
+                    <h1 class="text-4xl font-bold mb-4">CineAI</h1>
+                    <p class="text-xl mb-8 text-gray-300">Hệ thống quản lý rạp phim thông minh</p>
+                    <div class="space-y-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-film text-2xl mr-3 text-red-500"></i>
+                            <p class="text-gray-300">Quản lý lịch chiếu thông minh</p>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-ticket-alt text-2xl mr-3 text-red-500"></i>
+                            <p class="text-gray-300">Đặt vé trực tuyến dễ dàng</p>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-chart-line text-2xl mr-3 text-red-500"></i>
+                            <p class="text-gray-300">Thống kê doanh thu chi tiết</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right side - Login Form -->
+            <div class="md:w-1/2 glass-effect p-8 animate-fade-in">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold text-white mb-2">Đăng nhập</h2>
+                    <p class="text-gray-400">Chào mừng trở lại!</p>
+                </div>
+
+                <div id="error" class="mb-4 text-red-400 hidden"></div>
+                <div th:if="${param.success}" class="mb-4 p-3 bg-green-900 text-green-300 rounded-lg">
+                    <i class="fas fa-check-circle mr-2"></i>Đăng ký thành công! Vui lòng đăng nhập.
+                </div>
+                <div th:if="${param.error}" class="mb-4 p-3 bg-red-900 text-red-300 rounded-lg" th:text="${param.error}"></div>
+
+                <form th:action="@{/login}" method="post" class="space-y-6">
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-300">Email</label>
+                        <input type="email" id="email" name="email" required
+                            class="mt-1 block w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-300">Mật khẩu</label>
+                        <input type="password" id="password" name="password" required
+                            class="mt-1 block w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="remember" name="remember"
+                                class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-700 rounded bg-gray-800">
+                            <label for="remember" class="ml-2 block text-sm text-gray-300">Ghi nhớ đăng nhập</label>
+                        </div>
+                        <a href="/forgot-password" class="text-sm text-red-500 hover:text-red-400">Quên mật khẩu?</a>
+                    </div>
+                    <button type="submit"
+                        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        Đăng nhập
+                    </button>
+                </form>
+
+                <div class="relative my-6">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-gray-700"></div>
+                    </div>
+                    <div class="relative flex justify-center text-sm">
+                        <span class="px-2 bg-gray-900 text-gray-400">Hoặc đăng nhập với</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <button type="button" class="flex items-center justify-center px-4 py-2 border border-gray-700 rounded-lg text-gray-300 bg-gray-800 hover:bg-gray-700 social-btn">
+                        <i class="fab fa-google text-red-500 mr-2"></i>
+                        Google
+                    </button>
+                    <button type="button" class="flex items-center justify-center px-4 py-2 border border-gray-700 rounded-lg text-gray-300 bg-gray-800 hover:bg-gray-700 social-btn">
+                        <i class="fab fa-facebook text-red-500 mr-2"></i>
+                        Facebook
+                    </button>
+                </div>
+
+                <div class="mt-6 text-center">
+                    <p class="text-gray-400">
+                        Chưa có tài khoản? 
+                        <a href="/register" class="text-red-500 hover:text-red-400 font-semibold">Đăng ký ngay</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyA-poymKPgulOh-TyKBOrSCZ0SwZJdpYlo",
+            authDomain: "cineai-50590.firebaseapp.com",
+            projectId: "cineai-50590",
+            storageBucket: "cineai-50590.firebasestorage.app",
+            messagingSenderId: "541834739231",
+            appId: "1:541834739231:web:0b51958bdd8346b6775f2a"
+        };
+
+        // Initialize Firebase
+        try {
+            firebase.initializeApp(firebaseConfig);
+            console.log("Firebase initialized successfully");
+        } catch (error) {
+            console.error("Firebase initialization failed:", error);
+        }
+
+        // Handle form submission
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginForm = document.querySelector('form[th\\:action="@{/login}"]');
+            if (loginForm) {
+                loginForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const email = document.getElementById('email').value;
+                    const password = document.getElementById('password').value;
+                    const errorDiv = document.getElementById('error');
+                    const submitButton = this.querySelector('button[type="submit"]');
+                    
+                    // Disable button and show loading state
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Đang đăng nhập...';
+
+                    firebase.auth().signInWithEmailAndPassword(email, password)
+                        .then((userCredential) => {
+                            return userCredential.user.getIdToken();
+                        })
+                        .then((idToken) => {
+                            sessionStorage.setItem('idToken', idToken);
+                            return fetch('/api/verify-token', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': 'Bearer ' + idToken
+                                }
+                            });
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                return response.text().then(text => {
+                                    throw new Error(`Token verification failed: ${response.status} - ${text}`);
+                                });
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                window.location.href = data.redirectUrl;
+                            } else {
+                                throw new Error(data.message || 'Invalid token');
+                            }
+                        })
+                        .catch((error) => {
+                            console.error("Login error:", error.message);
+                            errorDiv.textContent = 'Lỗi: ' + error.message;
+                            errorDiv.classList.remove('hidden');
+                            // Reset button state
+                            submitButton.disabled = false;
+                            submitButton.innerHTML = 'Đăng nhập';
+                        });
+                });
+            }
+        });
+    </script>
+</body>
+</html>

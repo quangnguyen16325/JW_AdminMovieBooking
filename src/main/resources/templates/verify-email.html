@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineAI - Xác thực email</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        .bg-cinema {
+            background: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)),
+                        url('/images/cinema-bg.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        .glass-effect {
+            background: rgba(17, 24, 39, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+    </style>
+</head>
+<body class="bg-cinema min-h-screen flex items-center justify-center p-4">
+    <div class="container mx-auto max-w-2xl">
+        <div class="glass-effect p-8 rounded-2xl shadow-2xl animate-fade-in">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-white mb-2">Xác thực email</h2>
+                <p class="text-gray-400">Vui lòng kiểm tra email <span th:text="${email}" class="text-red-500"></span> để xác thực tài khoản của bạn.</p>
+                <p class="text-gray-400 mt-2">Kiểm tra thư mục spam nếu không thấy email xác thực.</p>
+            </div>
+
+            <div id="error" class="mb-4 p-3 bg-red-900 text-red-300 rounded-lg hidden"></div>
+            <div id="success" class="mb-4 p-3 bg-green-900 text-green-300 rounded-lg hidden"></div>
+
+            <div class="text-center">
+                <div id="loading" class="mb-4 hidden">
+                    <i class="fas fa-spinner fa-spin text-4xl text-red-500"></i>
+                </div>
+                <p class="text-gray-300 mb-4">Chưa nhận được email xác thực?</p>
+                <button id="resendButton" class="bg-red-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
+                    Gửi lại email xác thực
+                </button>
+            </div>
+
+            <div class="mt-6 text-center">
+                <p class="text-gray-400">
+                    <a href="/login" class="text-red-500 hover:text-red-400 font-semibold">Quay lại trang đăng nhập</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyA-poymKPgulOh-TyKBOrSCZ0SwZJdpYlo",
+            authDomain: "cineai-50590.firebaseapp.com",
+            projectId: "cineai-50590",
+            storageBucket: "cineai-50590.firebasestorage.app",
+            messagingSenderId: "541834739231",
+            appId: "1:541834739231:web:0b51958bdd8346b6775f2a"
+        };
+
+        // Initialize Firebase
+        try {
+            firebase.initializeApp(firebaseConfig);
+            console.log("Firebase initialized successfully");
+        } catch (error) {
+            console.error("Firebase initialization failed:", error);
+        }
+
+        // Handle email verification
+        document.addEventListener('DOMContentLoaded', function() {
+            const loading = document.getElementById('loading');
+            const errorDiv = document.getElementById('error');
+            const successDiv = document.getElementById('success');
+            const resendButton = document.getElementById('resendButton');
+            const urlParams = new URLSearchParams(window.location.search);
+            const mode = urlParams.get('mode');
+            const actionCode = urlParams.get('oobCode');
+            const emailElement = document.querySelector('span[th\\:text="${email}"]');
+            const email = emailElement ? emailElement.textContent : '';
+
+            // Handle resend verification email
+            if (resendButton && email) {
+                resendButton.addEventListener('click', function() {
+                    loading.classList.remove('hidden');
+                    errorDiv.classList.add('hidden');
+                    successDiv.classList.add('hidden');
+                    resendButton.disabled = true;
+
+                    firebase.auth().sendSignInLinkToEmail(email, {
+                        url: window.location.origin + '/verify-email',
+                        handleCodeInApp: true
+                    })
+                    .then(() => {
+                        loading.classList.add('hidden');
+                        successDiv.textContent = 'Email xác thực đã được gửi lại. Vui lòng kiểm tra hộp thư của bạn.';
+                        successDiv.classList.remove('hidden');
+                    })
+                    .catch((error) => {
+                        loading.classList.add('hidden');
+                        errorDiv.textContent = 'Không thể gửi lại email xác thực: ' + error.message;
+                        errorDiv.classList.remove('hidden');
+                    })
+                    .finally(() => {
+                        resendButton.disabled = false;
+                    });
+                });
+            }
+
+            // Handle verification link
+            if (mode === 'verifyEmail' && actionCode) {
+                loading.classList.remove('hidden');
+                firebase.auth().applyActionCode(actionCode)
+                    .then(() => {
+                        loading.classList.add('hidden');
+                        successDiv.textContent = 'Email của bạn đã được xác thực thành công! Bạn có thể đăng nhập ngay bây giờ.';
+                        successDiv.classList.remove('hidden');
+                    })
+                    .catch((error) => {
+                        loading.classList.add('hidden');
+                        let errorMessage = 'Đã xảy ra lỗi khi xác thực email.';
+                        
+                        switch (error.code) {
+                            case 'auth/invalid-action-code':
+                                errorMessage = 'Link xác thực không hợp lệ hoặc đã hết hạn.';
+                                break;
+                            case 'auth/expired-action-code':
+                                errorMessage = 'Link xác thực đã hết hạn. Vui lòng yêu cầu gửi lại email xác thực.';
+                                break;
+                            case 'auth/user-disabled':
+                                errorMessage = 'Tài khoản của bạn đã bị vô hiệu hóa.';
+                                break;
+                            case 'auth/user-not-found':
+                                errorMessage = 'Không tìm thấy tài khoản.';
+                                break;
+                        }
+                        
+                        errorDiv.textContent = errorMessage;
+                        errorDiv.classList.remove('hidden');
+                    });
+            }
+        });
+    </script>
+</body>
+</html> 

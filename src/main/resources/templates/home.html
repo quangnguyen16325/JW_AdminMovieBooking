@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Home</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 h-screen flex items-center justify-center">
+<div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+  <h2 class="text-2xl font-bold mb-6 text-center">Welcome to Home</h2>
+  <p class="text-center">Hello, <span th:text="${fullName}"></span>! You are logged in as <span th:text="${role}"></span>.</p>
+  <a href="/logout" class="block text-center text-blue-500 hover:underline">Logout</a>
+</div>
+<script>
+  // Clear sessionStorage on logout
+  document.querySelector('a[href="/logout"]').addEventListener('click', function(e) {
+    sessionStorage.removeItem('idToken');
+  });
+</script>
+</body>
+</html>

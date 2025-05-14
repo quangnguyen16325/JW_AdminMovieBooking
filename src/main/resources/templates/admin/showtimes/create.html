@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineAI - Thêm lịch chiếu mới</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        .sidebar {
+            width: 280px;
+            transition: all 0.3s ease;
+            border-radius: 0 20px 20px 0;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+        .sidebar.collapsed {
+            width: 80px;
+        }
+        .sidebar.collapsed .sidebar-text {
+            display: none;
+        }
+        .sidebar.collapsed .sidebar-icon {
+            margin-right: 0;
+        }
+        .main-content {
+            transition: all 0.3s ease;
+            margin-left: 280px;
+        }
+        .main-content.expanded {
+            margin-left: 80px;
+        }
+        .sidebar-header {
+            background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            height: 70px;
+            border-radius: 0 20px 0 0;
+        }
+        .sidebar-header .sidebar-text {
+            flex: 1;
+            text-align: center;
+            font-size: 1.5rem;
+            letter-spacing: 1px;
+        }
+        .sidebar-header #sidebarToggle {
+            position: absolute;
+            right: 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .sidebar-header #sidebarToggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+        .sidebar.collapsed .sidebar-header {
+            justify-content: center;
+            padding: 0 1rem;
+        }
+        .sidebar.collapsed .sidebar-header #sidebarToggle {
+            position: static;
+        }
+        .sidebar-item {
+            transition: all 0.3s ease;
+            margin: 8px 12px;
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            border: 1px solid transparent;
+        }
+        .sidebar-item:hover {
+            transform: translateX(5px);
+            background: rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.2);
+        }
+        .sidebar-item.active {
+            background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(26, 35, 126, 0.2);
+            border-color: transparent;
+        }
+        .sidebar-item.active:hover {
+            background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
+            transform: translateX(5px);
+        }
+        .sidebar-item .sidebar-icon {
+            transition: all 0.3s ease;
+            font-size: 1.2rem;
+            width: 24px;
+            text-align: center;
+            margin-right: 12px;
+        }
+        .sidebar.collapsed .sidebar-item {
+            padding: 12px;
+            justify-content: center;
+        }
+        .sidebar.collapsed .sidebar-icon {
+            margin-right: 0;
+        }
+        
+        /* Dark mode styles */
+        .dark {
+            background-color: #111827;
+            color: #ffffff;
+        }
+        .dark .bg-white {
+            background-color: #1f2937;
+            color: #ffffff;
+        }
+        .dark .text-gray-800 {
+            color: #ffffff;
+        }
+        .dark .text-gray-600 {
+            color: #9ca3af;
+        }
+        .dark .bg-gray-50 {
+            background-color: #374151;
+        }
+        .dark .border-gray-200 {
+            border-color: #4b5563;
+        }
+        .dark .sidebar {
+            background: rgba(31, 41, 55, 0.95);
+            border-right: 1px solid #374151;
+        }
+        .dark .sidebar-header {
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+        }
+        .dark .sidebar-item {
+            color: #e5e7eb;
+            border-color: transparent;
+        }
+        .dark .sidebar-item:hover {
+            background: rgba(59, 130, 246, 0.2);
+            color: #ffffff;
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+        .dark .sidebar-item.active {
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+            border-color: transparent;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Sidebar -->
+    <div class="fixed inset-y-0 left-0 sidebar bg-white shadow-lg" id="sidebar">
+        <div class="flex items-center justify-between h-16 sidebar-header">
+            <h1 class="text-2xl font-bold text-white sidebar-text">CineAI</h1>
+            <button id="sidebarToggle" class="text-white hover:text-gray-200">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        <nav class="mt-8">
+            <div class="px-4 mb-4">
+                <div class="flex items-center">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=random" alt="Admin" class="w-10 h-10 rounded-full">
+                    <div class="ml-3 sidebar-text">
+                        <p class="text-sm font-medium text-gray-800">Admin</p>
+                        <p class="text-xs text-gray-500" th:text="${email}">admin@cineai.com</p>
+                    </div>
+                </div>
+            </div>
+            <div class="px-4 space-y-2">
+                <a href="/admin/dashboard" class="sidebar-item flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                    <i class="fas fa-home w-6 sidebar-icon"></i>
+                    <span class="sidebar-text">Dashboard</span>
+                </a>
+                <a href="/admin/movies" class="sidebar-item flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                    <i class="fas fa-film w-6 sidebar-icon"></i>
+                    <span class="sidebar-text">Phim</span>
+                </a>
+                <a href="/admin/cinemas" class="sidebar-item flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                    <i class="fas fa-building w-6 sidebar-icon"></i>
+                    <span class="sidebar-text">Rạp chiếu</span>
+                </a>
+                <a href="/admin/showtimes" class="sidebar-item active flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                    <i class="fas fa-clock w-6 sidebar-icon"></i>
+                    <span class="sidebar-text">Lịch chiếu</span>
+                </a>
+                <a href="/admin/bookings" class="sidebar-item flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                    <i class="fas fa-ticket-alt w-6 sidebar-icon"></i>
+                    <span class="sidebar-text">Đặt vé</span>
+                </a>
+                <a href="/admin/users" class="sidebar-item flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                    <i class="fas fa-users w-6 sidebar-icon"></i>
+                    <span class="sidebar-text">Người dùng</span>
+                </a>
+                <a href="/admin/settings" class="sidebar-item flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                    <i class="fas fa-cog w-6 sidebar-icon"></i>
+                    <span class="sidebar-text">Cài đặt</span>
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content p-8">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800">Thêm lịch chiếu mới</h2>
+                <p class="text-gray-600">Tạo lịch chiếu phim mới</p>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="/admin/showtimes" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>Quay lại
+                </a>
+            </div>
+        </div>
+
+        <!-- Alert Messages -->
+        <div th:if="${success}" class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+            <p th:text="${success}"></p>
+        </div>
+        <div th:if="${error}" class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            <p th:text="${error}"></p>
+        </div>
+
+        <!-- Create Form -->
+        <div class="bg-white rounded-lg shadow-md p-6 animate-fade-in">
+            <form th:action="@{/admin/showtimes/create}" method="post" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Cinema Selection -->
+                    <div>
+                        <label for="cinemaId" class="block text-sm font-medium text-gray-700">Rạp chiếu</label>
+                        <select id="cinemaId" name="cinemaId" required
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <option value="">Chọn rạp chiếu</option>
+                            <option th:each="cinema : ${cinemas}"
+                                    th:value="${cinema.id}"
+                                    th:text="${cinema.name}">Cinema Name</option>
+                        </select>
+                    </div>
+
+                    <!-- Movie Selection -->
+                    <div>
+                        <label for="movieId" class="block text-sm font-medium text-gray-700">Phim</label>
+                        <select id="movieId" name="movieId" required
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <option value="">Chọn phim</option>
+                            <option th:each="movie : ${movies}"
+                                    th:value="${movie.id}"
+                                    th:text="${movie.title}">Movie Title</option>
+                        </select>
+                    </div>
+
+                    <!-- Screen Selection -->
+                    <div>
+                        <label for="screenId" class="block text-sm font-medium text-gray-700">Phòng chiếu</label>
+                        <select id="screenId" name="screenId" required
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <option value="">Chọn phòng chiếu</option>
+                        </select>
+                    </div>
+
+                    <!-- Format Selection -->
+                    <div>
+                        <label for="format" class="block text-sm font-medium text-gray-700">Định dạng</label>
+                        <select id="format" name="format" required
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <option value="">Chọn định dạng</option>
+                            <option value="2D">2D</option>
+                            <option value="3D">3D</option>
+                            <option value="IMAX">IMAX</option>
+                        </select>
+                    </div>
+
+                    <!-- Start Time -->
+                    <div>
+                        <label for="startTime" class="block text-sm font-medium text-gray-700">Thời gian bắt đầu</label>
+                        <input type="datetime-local" id="startTime" name="startTime" required
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+
+                    <!-- End Time -->
+                    <div>
+                        <label for="endTime" class="block text-sm font-medium text-gray-700">Thời gian kết thúc</label>
+                        <input type="datetime-local" id="endTime" name="endTime" required
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+
+                    <!-- Price -->
+                    <div>
+                        <label for="price" class="block text-sm font-medium text-gray-700">Giá vé (VNĐ)</label>
+                        <input type="number" id="price" name="price" required min="0" step="1000"
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-4">
+                    <a th:href="@{/admin/showtimes}"
+                       class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Hủy
+                    </a>
+                    <button type="submit"
+                            class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Thêm lịch chiếu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            const cinemaSelect = document.getElementById('cinemaId');
+            const movieSelect = document.getElementById('movieId');
+            const screenSelect = document.getElementById('screenId');
+            const startTimeInput = document.getElementById('startTime');
+            const endTimeInput = document.getElementById('endTime');
+
+            // Lưu thời lượng phim
+            const movieDurations = new Map();
+            /*<![CDATA[*/
+            const movies = /*[[${movies}]]*/ [];
+            movies.forEach(movie => {
+                if (movie.duration) {
+                    movieDurations.set(movie.id, parseInt(movie.duration));
+                }
+            });
+            /*]]>*/
+
+            // Hàm chuyển đổi thời gian từ input datetime-local sang định dạng MM/DD/YYYY HH:MM AM/PM
+            function formatDateTime(date) {
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const day = date.getDate().toString().padStart(2, '0');
+                const year = date.getFullYear();
+                let hours = date.getHours();
+                const minutes = date.getMinutes().toString().padStart(2, '0');
+                const ampm = hours >= 12 ? 'PM' : 'AM';
+                hours = hours % 12;
+                hours = hours ? hours : 12; // Chuyển 0 thành 12
+                return `${month}/${day}/${year} ${hours}:${minutes} ${ampm}`;
+            }
+
+            // Hàm chuyển đổi từ định dạng MM/DD/YYYY HH:MM AM/PM sang Date
+            function parseDateTime(dateTimeStr) {
+                const [datePart, timePart] = dateTimeStr.split(' ');
+                const [month, day, year] = datePart.split('/');
+                const [time, ampm] = timePart.split(' ');
+                let [hours, minutes] = time.split(':');
+                hours = parseInt(hours);
+                if (ampm === 'PM' && hours !== 12) {
+                    hours += 12;
+                } else if (ampm === 'AM' && hours === 12) {
+                    hours = 0;
+                }
+                return new Date(year, month - 1, day, hours, parseInt(minutes));
+            }
+
+            // Set minimum datetime for start time (current time)
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            startTimeInput.min = now.toISOString().slice(0, 16);
+
+            // Tự động tính thời gian kết thúc khi chọn thời gian bắt đầu
+            startTimeInput.addEventListener('change', function() {
+                const startTime = new Date(this.value);
+                const movieId = movieSelect.value;
+                const duration = movieDurations.get(movieId);
+
+                if (startTime && duration) {
+                    // Tạo một bản sao của thời gian bắt đầu
+                    const endTime = new Date(startTime);
+                    // Cộng thêm số phút từ duration
+                    endTime.setMinutes(endTime.getMinutes() + duration);
+                    
+                    // Điều chỉnh múi giờ
+                    const timezoneOffset = endTime.getTimezoneOffset();
+                    endTime.setMinutes(endTime.getMinutes() - timezoneOffset);
+                    
+                    endTimeInput.value = endTime.toISOString().slice(0, 16);
+
+                    // Hiển thị thời gian theo định dạng mới
+                    const formattedStartTime = formatDateTime(startTime);
+                    const formattedEndTime = formatDateTime(endTime);
+                    console.log('Thời gian bắt đầu:', formattedStartTime);
+                    console.log('Thời gian kết thúc:', formattedEndTime);
+                }
+            });
+
+            // Cập nhật thời gian kết thúc khi chọn phim khác
+            movieSelect.addEventListener('change', function() {
+                if (startTimeInput.value) {
+                    const startTime = new Date(startTimeInput.value);
+                    const duration = movieDurations.get(this.value);
+                    
+                    if (duration) {
+                        // Tạo một bản sao của thời gian bắt đầu
+                        const endTime = new Date(startTime);
+                        // Cộng thêm số phút từ duration
+                        endTime.setMinutes(endTime.getMinutes() + duration);
+                        
+                        // Điều chỉnh múi giờ
+                        const timezoneOffset = endTime.getTimezoneOffset();
+                        endTime.setMinutes(endTime.getMinutes() - timezoneOffset);
+                        
+                        endTimeInput.value = endTime.toISOString().slice(0, 16);
+
+                        // Hiển thị thời gian theo định dạng mới
+                        const formattedStartTime = formatDateTime(startTime);
+                        const formattedEndTime = formatDateTime(endTime);
+                        console.log('Thời gian bắt đầu:', formattedStartTime);
+                        console.log('Thời gian kết thúc:', formattedEndTime);
+                    }
+                }
+            });
+
+            // Load screens when cinema is selected
+            cinemaSelect.addEventListener('change', function() {
+                const cinemaId = this.value;
+                if (!cinemaId) {
+                    screenSelect.innerHTML = '<option value="">Chọn phòng chiếu</option>';
+                    return;
+                }
+
+                // Clear existing options
+                screenSelect.innerHTML = '<option value="">Đang tải...</option>';
+
+                // Fetch screens for selected cinema
+                fetch(`/admin/showtimes/screens/${cinemaId}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Lỗi khi tải danh sách phòng chiếu');
+                        }
+                        return response.json();
+                    })
+                    .then(screens => {
+                        screenSelect.innerHTML = '<option value="">Chọn phòng chiếu</option>';
+                        if (Array.isArray(screens)) {
+                            screens.forEach(screen => {
+                                const option = document.createElement('option');
+                                option.value = screen.id;
+                                option.textContent = screen.name;
+                                screenSelect.appendChild(option);
+                            });
+                        } else {
+                            throw new Error('Dữ liệu phòng chiếu không hợp lệ');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading screens:', error);
+                        screenSelect.innerHTML = '<option value="">Lỗi khi tải danh sách phòng chiếu</option>';
+                    });
+            });
+        });
+    </script>
+</body>
+</html> 

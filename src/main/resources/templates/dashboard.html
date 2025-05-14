@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineAI - Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        .sidebar {
+            width: 280px;
+            transition: all 0.3s ease;
+            border-radius: 0 20px 20px 0;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+        .sidebar.collapsed {
+            width: 80px;
+        }
+        .sidebar.collapsed .sidebar-text {
+            display: none;
+        }
+        .sidebar.collapsed .sidebar-icon {
+            margin-right: 0;
+        }
+        .main-content {
+            transition: all 0.3s ease;
+            margin-left: 280px;
+        }
+        .main-content.expanded {
+            margin-left: 80px;
+        }
+        .sidebar-header {
+            background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            height: 70px;
+            border-radius: 0 20px 0 0;
+        }
+        .sidebar-header .sidebar-text {
+            flex: 1;
+            text-align: center;
+            font-size: 1.5rem;
+            letter-spacing: 1px;
+        }
+        .sidebar-header #sidebarToggle {
+            position: absolute;
+            right: 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .sidebar-header #sidebarToggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+        .sidebar.collapsed .sidebar-header {
+            justify-content: center;
+            padding: 0 1rem;
+        }
+        .sidebar.collapsed .sidebar-header #sidebarToggle {
+            position: static;
+        }
+        .sidebar-item {
+            transition: all 0.3s ease;
+            margin: 8px 12px;
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            border: 1px solid transparent;
+        }
+        .sidebar-item:hover {
+            transform: translateX(5px);
+            background: rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.2);
+        }
+        .sidebar-item.active {
+            background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(26, 35, 126, 0.2);
+            border-color: transparent;
+        }
+        .sidebar-item.active:hover {
+            background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
+            transform: translateX(5px);
+        }
+        .sidebar-item .sidebar-icon {
+            transition: all 0.3s ease;
+            font-size: 1.2rem;
+            width: 24px;
+            text-align: center;
+            margin-right: 12px;
+        }
+        .sidebar.collapsed .sidebar-item {
+            padding: 12px;
+            justify-content: center;
+        }
+        .sidebar.collapsed .sidebar-icon {
+            margin-right: 0;
+        }
+        
+        /* Dark mode styles */
+        .dark {
+            background-color: #111827;
+            color: #ffffff;
+        }
+        .dark .bg-white {
+            background-color: #1f2937;
+            color: #ffffff;
+        }
+        .dark .text-gray-800 {
+            color: #ffffff;
+        }
+        .dark .text-gray-600 {
+            color: #9ca3af;
+        }
+        .dark .bg-gray-50 {
+            background-color: #374151;
+        }
+        .dark .border-gray-200 {
+            border-color: #4b5563;
+        }
+        .dark .sidebar {
+            background: rgba(31, 41, 55, 0.95);
+            border-right: 1px solid #374151;
+        }
+        .dark .sidebar-header {
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+        }
+        .dark .sidebar-item {
+            color: #e5e7eb;
+            border-color: transparent;
+        }
+        .dark .sidebar-item:hover {
+            background: rgba(59, 130, 246, 0.2);
+            color: #ffffff;
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+        .dark .sidebar-item.active {
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+            border-color: transparent;
+        }
+        .content-card {
+            transition: all 0.3s ease;
+        }
+        .content-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        /* Light mode card styles */
+        .stat-card {
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb;
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            border-color: #3b82f6;
+        }
+        .stat-icon {
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover .stat-icon {
+            transform: scale(1.1);
+            background-color: #eff6ff;
+        }
+        .chart-container {
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb;
+            transition: all 0.3s ease;
+        }
+        .chart-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            border-color: #3b82f6;
+        }
+        .dark .stat-card {
+            background-color: #1f2937;
+            border: 1px solid #374151;
+            color: #ffffff;
+            transition: all 0.3s ease;
+        }
+        .dark .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            border-color: #3b82f6;
+            background-color: #2d3748;
+        }
+        .dark .stat-card:hover .stat-icon {
+            transform: scale(1.1);
+            background-color: rgba(59, 130, 246, 0.2);
+        }
+        .dark .chart-container {
+            background-color: #1f2937;
+            border: 1px solid #374151;
+            color: #ffffff;
+            transition: all 0.3s ease;
+        }
+        .dark .chart-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            border-color: #3b82f6;
+            background-color: #2d3748;
+        }
+        .dark .text-gray-500 {
+            color: #9ca3af;
+        }
+        .dark .text-gray-800 {
+            color: #ffffff;
+        }
+        .dark .bg-blue-100 {
+            background-color: rgba(59, 130, 246, 0.2);
+        }
+        .dark .bg-green-100 {
+            background-color: rgba(34, 197, 94, 0.2);
+        }
+        .dark .bg-purple-100 {
+            background-color: rgba(168, 85, 247, 0.2);
+        }
+        .dark .bg-red-100 {
+            background-color: rgba(239, 68, 68, 0.2);
+        }
+        .dark .bg-yellow-100 {
+            background-color: rgba(245, 158, 11, 0.2);
+        }
+        .dark .bg-indigo-100 {
+            background-color: rgba(99, 102, 241, 0.2);
+        }
+        .dark .text-blue-500 {
+            color: #60a5fa;
+        }
+        .dark .text-green-500 {
+            color: #4ade80;
+        }
+        .dark .text-purple-500 {
+            color: #a78bfa;
+        }
+        .dark .text-red-500 {
+            color: #f87171;
+        }
+        .dark .text-yellow-500 {
+            color: #fbbf24;
+        }
+        .dark .text-indigo-500 {
+            color: #818cf8;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Sidebar -->
+    <div class="fixed inset-y-0 left-0 sidebar bg-white shadow-lg" id="sidebar">
+        <div class="flex items-center justify-between h-16 sidebar-header">
+            <h1 class="text-2xl font-bold text-white sidebar-text">CineAI</h1>
+            <button id="sidebarToggle" class="text-white hover:text-gray-200">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        <nav class="mt-8">
+            <div class="px-4 mb-4">
+                <div class="flex items-center">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=random" alt="Admin" class="w-10 h-10 rounded-full">
+                    <div class="ml-3 sidebar-text">
+                        <p class="text-sm font-medium text-gray-800">Admin</p>
+                        <p class="text-xs text-gray-500" th:text="${email}">admin@cineai.com</p>
+                    </div>
+                </div>
+            </div>
+            <div class="px-4 space-y-2">
+                <a href="/admin/dashboard" class="sidebar-item active flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                    <i class="fas fa-home w-6 sidebar-icon"></i>
+                    <span class="sidebar-text">Dashboard</span>
+                </a>
+                <a href="/admin/movies" class="sidebar-item flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                    <i class="fas fa-film w-6 sidebar-icon"></i>
+                    <span class="sidebar-text">Phim</span>
+                </a>
+                <a href="/admin/cinemas" class="sidebar-item flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                    <i class="fas fa-building w-6 sidebar-icon"></i>
+                    <span class="sidebar-text">Rạp chiếu</span>
+                </a>
+                <a href="/admin/showtimes" class="sidebar-item flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                    <i class="fas fa-clock w-6 sidebar-icon"></i>
+                    <span class="sidebar-text">Lịch chiếu</span>
+                </a>
+                <a href="/admin/bookings" class="sidebar-item flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                    <i class="fas fa-ticket-alt w-6 sidebar-icon"></i>
+                    <span class="sidebar-text">Đặt vé</span>
+                </a>
+                <a href="/admin/users" class="sidebar-item flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                    <i class="fas fa-users w-6 sidebar-icon"></i>
+                    <span class="sidebar-text">Người dùng</span>
+                </a>
+                <a href="/admin/settings" class="sidebar-item flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                    <i class="fas fa-cog w-6 sidebar-icon"></i>
+                    <span class="sidebar-text">Cài đặt</span>
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content p-8">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800">Dashboard</h2>
+                <p class="text-gray-600">Tổng quan về hệ thống</p>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button class="p-2 text-gray-600 hover:text-gray-800">
+                    <i class="fas fa-bell text-xl"></i>
+                </button>
+                <button class="p-2 text-gray-600 hover:text-gray-800">
+                    <i class="fas fa-envelope text-xl"></i>
+                </button>
+                <a href="/logout" class="flex items-center space-x-2 text-gray-600 hover:text-gray-800">
+                    <i class="fas fa-sign-out-alt text-xl"></i>
+                    <span>Đăng xuất</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Total Revenue -->
+            <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-all duration-300 border border-transparent hover:border-blue-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Tổng doanh thu</p>
+                        <p class="text-2xl font-bold text-gray-800" th:text="${#numbers.formatDecimal(totalRevenue, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</p>
+                    </div>
+                    <div class="p-3 bg-blue-100 rounded-full">
+                        <i class="fas fa-dollar-sign text-blue-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tickets Sold -->
+            <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-all duration-300 border border-transparent hover:border-blue-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Vé đã bán</p>
+                        <p class="text-2xl font-bold text-gray-800" th:text="${totalTickets}">0</p>
+                    </div>
+                    <div class="p-3 bg-green-100 rounded-full">
+                        <i class="fas fa-ticket-alt text-green-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users -->
+            <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-all duration-300 border border-transparent hover:border-blue-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Người dùng</p>
+                        <p class="text-2xl font-bold text-gray-800" th:text="${totalUsers}">0</p>
+                    </div>
+                    <div class="p-3 bg-purple-100 rounded-full">
+                        <i class="fas fa-users text-purple-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Now Showing Movies -->
+            <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-all duration-300 border border-transparent hover:border-blue-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Phim đang chiếu</p>
+                        <p class="text-2xl font-bold text-gray-800" th:text="${nowShowingCount}">0</p>
+                    </div>
+                    <div class="p-3 bg-red-100 rounded-full">
+                        <i class="fas fa-film text-red-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- New Movies -->
+            <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-all duration-300 border border-transparent hover:border-blue-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Phim mới (7 ngày)</p>
+                        <p class="text-2xl font-bold text-gray-800" th:text="${newMoviesCount}">0</p>
+                    </div>
+                    <div class="p-3 bg-yellow-100 rounded-full">
+                        <i class="fas fa-star text-yellow-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cinemas -->
+            <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-all duration-300 border border-transparent hover:border-blue-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Rạp chiếu</p>
+                        <p class="text-2xl font-bold text-gray-800" th:text="${cinemasCount}">0</p>
+                    </div>
+                    <div class="p-3 bg-indigo-100 rounded-full">
+                        <i class="fas fa-building text-indigo-600"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="chart-container bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold mb-4">Doanh thu theo tháng</h3>
+                <div class="h-64">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-container bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold mb-4">Phim phổ biến</h3>
+                <div class="h-64">
+                    <canvas id="popularMoviesChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activities -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="chart-container bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold mb-4">Hoạt động gần đây</h3>
+                <div class="h-64">
+                    <canvas id="hourlyStatsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            // Revenue Chart
+            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+            const monthlyRevenue = /*[[${monthlyRevenue}]]*/ {};
+            new Chart(revenueCtx, {
+                type: 'line',
+                data: {
+                    labels: Object.keys(monthlyRevenue),
+                    datasets: [{
+                        label: 'Doanh thu (triệu VNĐ)',
+                        data: Object.values(monthlyRevenue).map(value => value / 1000000),
+                        borderColor: '#3b82f6',
+                        tension: 0.4,
+                        fill: true,
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Popular Movies Chart
+            const popularMoviesCtx = document.getElementById('popularMoviesChart').getContext('2d');
+            const popularMovies = /*[[${popularMovies}]]*/ [];
+            new Chart(popularMoviesCtx, {
+                type: 'bar',
+                data: {
+                    labels: popularMovies.map(movie => movie.title),
+                    datasets: [{
+                        label: 'Số vé đã bán',
+                        data: popularMovies.map(movie => movie.tickets),
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.8)',
+                            'rgba(239, 68, 68, 0.8)',
+                            'rgba(34, 197, 94, 0.8)',
+                            'rgba(168, 85, 247, 0.8)',
+                            'rgba(245, 158, 11, 0.8)'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Hourly Stats Chart
+            const hourlyStatsCtx = document.getElementById('hourlyStatsChart').getContext('2d');
+            const hourlyStats = /*[[${hourlyStats}]]*/ {};
+            new Chart(hourlyStatsCtx, {
+                type: 'line',
+                data: {
+                    labels: Object.keys(hourlyStats),
+                    datasets: [{
+                        label: 'Số vé bán theo giờ',
+                        data: Object.values(hourlyStats),
+                        borderColor: '#3b82f6',
+                        tension: 0.4,
+                        fill: true,
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Sidebar toggle
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.querySelector('.main-content');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebarItems = document.querySelectorAll('.sidebar-item');
+
+            // Check for saved sidebar state
+            const sidebarState = localStorage.getItem('sidebarState');
+            if (sidebarState === 'collapsed') {
+                sidebar.classList.add('collapsed');
+                mainContent.classList.add('expanded');
+            }
+
+            // Toggle sidebar
+            sidebarToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('collapsed');
+                mainContent.classList.toggle('expanded');
+                localStorage.setItem('sidebarState', 
+                    sidebar.classList.contains('collapsed') ? 'collapsed' : 'expanded'
+                );
+            });
+
+            // Active menu item
+            sidebarItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    sidebarItems.forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+
+            // Check for dark mode
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark');
+            }
+        });
+    </script>
+</body>
+</html>

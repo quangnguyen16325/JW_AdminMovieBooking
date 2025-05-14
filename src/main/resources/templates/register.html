@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineAI - Đăng ký</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        .animate-slide-in {
+            animation: slideIn 0.5s ease-out;
+        }
+        .bg-cinema {
+            background: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)),
+                        url('/images/cinema-bg.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        .glass-effect {
+            background: rgba(17, 24, 39, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        .input-focus-effect {
+            transition: all 0.3s ease;
+        }
+        .input-focus-effect:focus {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        .btn-hover-effect {
+            transition: all 0.3s ease;
+        }
+        .btn-hover-effect:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        .social-btn {
+            transition: all 0.3s ease;
+        }
+        .social-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-cinema min-h-screen flex items-center justify-center p-4">
+    <div class="container mx-auto max-w-4xl">
+        <div class="flex flex-col md:flex-row rounded-2xl overflow-hidden shadow-2xl">
+            <!-- Left side - Register Form -->
+            <div class="md:w-1/2 glass-effect p-8 animate-fade-in">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold text-white mb-2">Đăng ký</h2>
+                    <p class="text-gray-400">Tạo tài khoản mới</p>
+                </div>
+
+                <div th:if="${error}" class="mb-4 p-3 bg-red-900 text-red-300 rounded-lg">
+                    <i class="fas fa-exclamation-circle mr-2"></i>
+                    <span th:text="${error}"></span>
+                </div>
+
+                <form id="registerForm" th:object="${registerRequest}" th:action="@{/register}" method="post" class="space-y-6">
+                    <div class="relative">
+                        <label class="block text-gray-300 text-sm font-semibold mb-2">Email</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                <i class="fas fa-envelope text-gray-500"></i>
+                            </span>
+                            <input type="email" th:field="*{email}" 
+                                   class="w-full pl-10 pr-3 py-3 bg-gray-800 border border-gray-700 text-white rounded-lg focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 input-focus-effect" 
+                                   placeholder="Nhập email của bạn" required />
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <label class="block text-gray-300 text-sm font-semibold mb-2">Họ và tên</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                <i class="fas fa-user text-gray-500"></i>
+                            </span>
+                            <input type="text" th:field="*{fullName}" 
+                                   class="w-full pl-10 pr-3 py-3 bg-gray-800 border border-gray-700 text-white rounded-lg focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 input-focus-effect" 
+                                   placeholder="Nhập họ và tên của bạn" required />
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <label class="block text-gray-300 text-sm font-semibold mb-2">Số điện thoại</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                <i class="fas fa-phone text-gray-500"></i>
+                            </span>
+                            <input type="tel" th:field="*{phoneNumber}" 
+                                   class="w-full pl-10 pr-3 py-3 bg-gray-800 border border-gray-700 text-white rounded-lg focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 input-focus-effect" 
+                                   placeholder="Nhập số điện thoại của bạn" required />
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <label class="block text-gray-300 text-sm font-semibold mb-2">Mật khẩu</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                <i class="fas fa-lock text-gray-500"></i>
+                            </span>
+                            <input type="password" th:field="*{password}" 
+                                   class="w-full pl-10 pr-3 py-3 bg-gray-800 border border-gray-700 text-white rounded-lg focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 input-focus-effect" 
+                                   placeholder="Nhập mật khẩu của bạn" required />
+                        </div>
+                    </div>
+
+                    <div class="flex items-center">
+                        <input type="checkbox" id="terms" class="h-4 w-4 text-red-500 focus:ring-red-500 border-gray-700 rounded bg-gray-800" required>
+                        <label for="terms" class="ml-2 block text-sm text-gray-300">
+                            Tôi đồng ý với <a href="#" class="text-red-500 hover:text-red-400">Điều khoản sử dụng</a> và <a href="#" class="text-red-500 hover:text-red-400">Chính sách bảo mật</a>
+                        </label>
+                    </div>
+
+                    <button type="submit" 
+                            class="w-full bg-gradient-to-r from-red-600 to-red-700 text-white py-3 rounded-lg hover:from-red-700 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition-all duration-200 btn-hover-effect">
+                        <i class="fas fa-user-plus mr-2"></i>Đăng ký
+                    </button>
+
+                    <div class="relative my-6">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-gray-700"></div>
+                        </div>
+                        <div class="relative flex justify-center text-sm">
+                            <span class="px-2 bg-gray-900 text-gray-400">Hoặc đăng ký với</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <button type="button" class="flex items-center justify-center px-4 py-2 border border-gray-700 rounded-lg text-gray-300 bg-gray-800 hover:bg-gray-700 social-btn">
+                            <i class="fab fa-google text-red-500 mr-2"></i>
+                            Google
+                        </button>
+                        <button type="button" class="flex items-center justify-center px-4 py-2 border border-gray-700 rounded-lg text-gray-300 bg-gray-800 hover:bg-gray-700 social-btn">
+                            <i class="fab fa-facebook text-red-500 mr-2"></i>
+                            Facebook
+                        </button>
+                    </div>
+                </form>
+
+                <div class="mt-6 text-center">
+                    <p class="text-gray-400">
+                        Đã có tài khoản? 
+                        <a href="/login" class="text-red-500 hover:text-red-400 font-semibold">Đăng nhập ngay</a>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Right side - Branding -->
+            <div class="md:w-1/2 bg-gradient-to-br from-gray-900 to-gray-800 p-8 text-white animate-slide-in">
+                <div class="h-full flex flex-col justify-center">
+                    <h1 class="text-4xl font-bold mb-4">CineAI</h1>
+                    <p class="text-xl mb-8 text-gray-300">Hệ thống quản lý rạp phim thông minh</p>
+                    <div class="space-y-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-film text-2xl mr-3 text-red-500"></i>
+                            <p class="text-gray-300">Quản lý lịch chiếu thông minh</p>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-ticket-alt text-2xl mr-3 text-red-500"></i>
+                            <p class="text-gray-300">Đặt vé trực tuyến dễ dàng</p>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-chart-line text-2xl mr-3 text-red-500"></i>
+                            <p class="text-gray-300">Thống kê doanh thu chi tiết</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

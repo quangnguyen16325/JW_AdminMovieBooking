@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineAI - Quản lý lịch chiếu</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        .sidebar {
+            width: 280px;
+            transition: all 0.3s ease;
+            border-radius: 0 20px 20px 0;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+        .sidebar.collapsed {
+            width: 80px;
+        }
+        .sidebar.collapsed .sidebar-text {
+            display: none;
+        }
+        .sidebar.collapsed .sidebar-icon {
+            margin-right: 0;
+        }
+        .main-content {
+            transition: all 0.3s ease;
+            margin-left: 280px;
+        }
+        .main-content.expanded {
+            margin-left: 80px;
+        }
+        .sidebar-header {
+            background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            height: 70px;
+            border-radius: 0 20px 0 0;
+        }
+        .sidebar-header .sidebar-text {
+            flex: 1;
+            text-align: center;
+            font-size: 1.5rem;
+            letter-spacing: 1px;
+        }
+        .sidebar-header #sidebarToggle {
+            position: absolute;
+            right: 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .sidebar-header #sidebarToggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+        .sidebar.collapsed .sidebar-header {
+            justify-content: center;
+            padding: 0 1rem;
+        }
+        .sidebar.collapsed .sidebar-header #sidebarToggle {
+            position: static;
+        }
+        .sidebar-item {
+            transition: all 0.3s ease;
+            margin: 8px 12px;
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            border: 1px solid transparent;
+        }
+        .sidebar-item:hover {
+            transform: translateX(5px);
+            background: rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.2);
+        }
+        .sidebar-item.active {
+            background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(26, 35, 126, 0.2);
+            border-color: transparent;
+        }
+        .sidebar-item.active:hover {
+            background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
+            transform: translateX(5px);
+        }
+        .sidebar-item .sidebar-icon {
+            transition: all 0.3s ease;
+            font-size: 1.2rem;
+            width: 24px;
+            text-align: center;
+            margin-right: 12px;
+        }
+        .sidebar.collapsed .sidebar-item {
+            padding: 12px;
+            justify-content: center;
+        }
+        .sidebar.collapsed .sidebar-icon {
+            margin-right: 0;
+        }
+        
+        /* Dark mode styles */
+        .dark {
+            background-color: #111827;
+            color: #ffffff;
+        }
+        .dark .bg-white {
+            background-color: #1f2937;
+            color: #ffffff;
+        }
+        .dark .text-gray-800 {
+            color: #ffffff;
+        }
+        .dark .text-gray-600 {
+            color: #9ca3af;
+        }
+        .dark .bg-gray-50 {
+            background-color: #374151;
+        }
+        .dark .border-gray-200 {
+            border-color: #4b5563;
+        }
+        .dark .sidebar {
+            background: rgba(31, 41, 55, 0.95);
+            border-right: 1px solid #374151;
+        }
+        .dark .sidebar-header {
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+        }
+        .dark .sidebar-item {
+            color: #e5e7eb;
+            border-color: transparent;
+        }
+        .dark .sidebar-item:hover {
+            background: rgba(59, 130, 246, 0.2);
+            color: #ffffff;
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+        .dark .sidebar-item.active {
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+            border-color: transparent;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Sidebar -->
+    <div class="fixed inset-y-0 left-0 sidebar bg-white shadow-lg" id="sidebar">
+        <div class="flex items-center justify-between h-16 sidebar-header">
+            <h1 class="text-2xl font-bold text-white sidebar-text">CineAI</h1>
+            <button id="sidebarToggle" class="text-white hover:text-gray-200">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        <nav class="mt-8">
+            <div class="px-4 mb-4">
+                <div class="flex items-center">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=random" alt="Admin" class="w-10 h-10 rounded-full">
+                    <div class="ml-3 sidebar-text">
+                        <p class="text-sm font-medium text-gray-800">Admin</p>
+                        <p class="text-xs text-gray-500" th:text="${email}">admin@cineai.com</p>
+                    </div>
+                </div>
+            </div>
+            <div class="px-4 space-y-2">
+                <a href="/admin/dashboard" class="sidebar-item flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                    <i class="fas fa-home w-6 sidebar-icon"></i>
+                    <span class="sidebar-text">Dashboard</span>
+                </a>
+                <a href="/admin/movies" class="sidebar-item flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                    <i class="fas fa-film w-6 sidebar-icon"></i>
+                    <span class="sidebar-text">Phim</span>
+                </a>
+                <a href="/admin/cinemas" class="sidebar-item flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                    <i class="fas fa-building w-6 sidebar-icon"></i>
+                    <span class="sidebar-text">Rạp chiếu</span>
+                </a>
+                <a href="/admin/showtimes" class="sidebar-item active flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                    <i class="fas fa-clock w-6 sidebar-icon"></i>
+                    <span class="sidebar-text">Lịch chiếu</span>
+                </a>
+                <a href="/admin/bookings" class="sidebar-item flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                    <i class="fas fa-ticket-alt w-6 sidebar-icon"></i>
+                    <span class="sidebar-text">Đặt vé</span>
+                </a>
+                <a href="/admin/users" class="sidebar-item flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                    <i class="fas fa-users w-6 sidebar-icon"></i>
+                    <span class="sidebar-text">Người dùng</span>
+                </a>
+                <a href="/admin/settings" class="sidebar-item flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                    <i class="fas fa-cog w-6 sidebar-icon"></i>
+                    <span class="sidebar-text">Cài đặt</span>
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content p-8">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800">Quản lý lịch chiếu phim</h2>
+                <p class="text-gray-600">Danh sách lịch chiếu</p>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="/admin/showtimes/create" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-plus mr-2"></i>Thêm lịch chiếu
+                </a>
+            </div>
+        </div>
+
+        <!-- Search and Filter -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <form th:action="@{/admin/showtimes}" method="get" class="flex flex-col md:flex-row gap-4">
+                <div class="flex-1">
+                    <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
+                    <div class="relative">
+                        <input type="text" id="search" name="search" 
+                               th:value="${searchQuery}"
+                               placeholder="Tìm theo tên phim hoặc rạp chiếu..."
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <button type="submit" class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="w-full md:w-64">
+                    <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Lọc theo ngày</label>
+                    <select id="date" name="date" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            onchange="this.form.submit()">
+                        <option value="">Tất cả các ngày</option>
+                        <option th:each="date : ${availableDates}"
+                                th:value="${date}"
+                                th:text="${#strings.substring(date, 8, 10) + '/' + #strings.substring(date, 5, 7) + '/' + #strings.substring(date, 0, 4)}"
+                                th:selected="${date == selectedDate}">
+                        </option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-filter mr-2"></i>Lọc
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Alert Messages -->
+        <div th:if="${success}" class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+            <p th:text="${success}"></p>
+        </div>
+        <div th:if="${error}" class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            <p th:text="${error}"></p>
+        </div>
+
+        <!-- Showtimes List -->
+        <div class="space-y-8">
+            <div th:each="dateGroup : ${showtimesByDate}" class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-4">
+                    <h3 class="text-lg font-semibold text-white" th:text="${#strings.substring(dateGroup.key, 8, 10) + '/' + #strings.substring(dateGroup.key, 5, 7) + '/' + #strings.substring(dateGroup.key, 0, 4)}">Ngày chiếu</h3>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4">
+                    <div th:each="showtime : ${dateGroup.value}" 
+                         class="bg-white rounded-lg shadow-sm overflow-hidden animate-fade-in hover:shadow-md transition-all duration-300 border border-gray-100 hover:border-blue-200">
+                        <div class="p-3">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="text-base font-semibold text-gray-800 line-clamp-1" th:text="${showtime.movieName}">Movie Name</h3>
+                                <div class="flex space-x-1">
+                                    <a th:href="@{/admin/showtimes/edit/{id}(id=${showtime.id})}" 
+                                       class="p-1 bg-blue-50 rounded hover:bg-blue-100 transition-colors">
+                                        <i class="fas fa-edit text-blue-600 text-xs"></i>
+                                    </a>
+                                    <form th:action="@{/admin/showtimes/delete/{id}(id=${showtime.id})}" 
+                                          method="post" class="inline" 
+                                          onsubmit="return confirm('Bạn có chắc chắn muốn xóa lịch chiếu này?');">
+                                        <button type="submit" class="p-1 bg-red-50 rounded hover:bg-red-100 transition-colors">
+                                            <i class="fas fa-trash text-red-600 text-xs"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            <div class="space-y-1.5">
+                                <div class="flex items-center text-gray-600 text-sm">
+                                    <i class="fas fa-building w-4 text-blue-500"></i>
+                                    <span class="line-clamp-1 flex-1 ml-1.5" th:text="${showtime.cinemaName}">Cinema Name</span>
+                                </div>
+                                <div class="flex items-center text-gray-600 text-sm">
+                                    <i class="fas fa-film w-4 text-blue-500"></i>
+                                    <span class="line-clamp-1 flex-1 ml-1.5" th:text="${'Phòng ' + showtime.screenId}">Screen</span>
+                                </div>
+                                <div class="flex items-center text-gray-600 text-sm">
+                                    <i class="fas fa-clock w-4 text-blue-500"></i>
+                                    <span class="ml-1.5 showtime-time" 
+                                          th:data-start="${#strings.substring(showtime.startTime.toString(), 11, 16)}"
+                                          th:data-end="${#strings.substring(showtime.endTime.toString(), 11, 16)}">
+                                    </span>
+                                </div>
+                                <div class="flex items-center text-gray-600 text-sm">
+                                    <i class="fas fa-tag w-4 text-blue-500"></i>
+                                    <span class="line-clamp-1 flex-1 ml-1.5" th:text="${showtime.format}">Format</span>
+                                </div>
+                                <div class="flex items-center text-gray-600 text-sm">
+                                    <i class="fas fa-money-bill w-4 text-blue-500"></i>
+                                    <span class="line-clamp-1 flex-1 ml-1.5" th:text="${#numbers.formatDecimal(showtime.price, 0, 'POINT', 0, 'COMMA') + ' VNĐ'}">Price</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.querySelector('.main-content');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebarItems = document.querySelectorAll('.sidebar-item');
+
+            // Check for saved sidebar state
+            const sidebarState = localStorage.getItem('sidebarState');
+            if (sidebarState === 'collapsed') {
+                sidebar.classList.add('collapsed');
+                mainContent.classList.add('expanded');
+            }
+
+            // Toggle sidebar
+            sidebarToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('collapsed');
+                mainContent.classList.toggle('expanded');
+                localStorage.setItem('sidebarState', 
+                    sidebar.classList.contains('collapsed') ? 'collapsed' : 'expanded'
+                );
+            });
+
+            // Active menu item
+            sidebarItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    sidebarItems.forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+
+            // Check for dark mode
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark');
+            }
+
+            // Hàm chuyển đổi thời gian sang định dạng 12 giờ
+            function formatTime(timeStr) {
+                if (!timeStr) return '';
+                const [hours, minutes] = timeStr.split(':');
+                const hour = parseInt(hours);
+                const ampm = hour >= 12 ? 'PM' : 'AM';
+                const hour12 = hour % 12 || 12;
+                return `${hour12}:${minutes} ${ampm}`;
+            }
+
+            // Hàm điều chỉnh múi giờ
+            function adjustTimeZone(timeStr) {
+                if (!timeStr) return '';
+                const [hours, minutes] = timeStr.split(':');
+                let hour = parseInt(hours);
+                // Điều chỉnh từ UTC sang UTC+7
+                hour = (hour + 7) % 24;
+                return `${hour.toString().padStart(2, '0')}:${minutes}`;
+            }
+
+            // Cập nhật hiển thị thời gian cho tất cả các lịch chiếu
+            document.querySelectorAll('.showtime-time').forEach(element => {
+                const startTime = element.getAttribute('data-start');
+                const endTime = element.getAttribute('data-end');
+                if (startTime && endTime) {
+                    const adjustedStartTime = adjustTimeZone(startTime);
+                    const adjustedEndTime = adjustTimeZone(endTime);
+                    const formattedStartTime = formatTime(adjustedStartTime);
+                    const formattedEndTime = formatTime(adjustedEndTime);
+                    element.textContent = `${formattedStartTime} - ${formattedEndTime}`;
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

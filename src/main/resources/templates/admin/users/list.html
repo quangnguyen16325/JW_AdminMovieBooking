@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineAI - Quản lý người dùng</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        .sidebar {
+            width: 280px;
+            transition: all 0.3s ease;
+            border-radius: 0 20px 20px 0;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+        .sidebar.collapsed {
+            width: 80px;
+        }
+        .sidebar.collapsed .sidebar-text {
+            display: none;
+        }
+        .sidebar.collapsed .sidebar-icon {
+            margin-right: 0;
+        }
+        .main-content {
+            transition: all 0.3s ease;
+            margin-left: 280px;
+        }
+        .main-content.expanded {
+            margin-left: 80px;
+        }
+        .sidebar-header {
+            background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            height: 70px;
+            border-radius: 0 20px 0 0;
+        }
+        .sidebar-header .sidebar-text {
+            flex: 1;
+            text-align: center;
+            font-size: 1.5rem;
+            letter-spacing: 1px;
+        }
+        .sidebar-header #sidebarToggle {
+            position: absolute;
+            right: 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .sidebar-header #sidebarToggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+        .sidebar.collapsed .sidebar-header {
+            justify-content: center;
+            padding: 0 1rem;
+        }
+        .sidebar.collapsed .sidebar-header #sidebarToggle {
+            position: static;
+        }
+        .sidebar-item {
+            transition: all 0.3s ease;
+            margin: 8px 12px;
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            border: 1px solid transparent;
+        }
+        .sidebar-item:hover {
+            transform: translateX(5px);
+            background: rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.2);
+        }
+        .sidebar-item.active {
+            background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(26, 35, 126, 0.2);
+            border-color: transparent;
+        }
+        .sidebar-item.active:hover {
+            background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
+            transform: translateX(5px);
+        }
+        .sidebar-item .sidebar-icon {
+            transition: all 0.3s ease;
+            font-size: 1.2rem;
+            width: 24px;
+            text-align: center;
+            margin-right: 12px;
+        }
+        .sidebar.collapsed .sidebar-item {
+            padding: 12px;
+            justify-content: center;
+        }
+        .sidebar.collapsed .sidebar-icon {
+            margin-right: 0;
+        }
+        
+        /* Dark mode styles */
+        .dark {
+            background-color: #111827;
+            color: #ffffff;
+        }
+        .dark .bg-white {
+            background-color: #1f2937;
+            color: #ffffff;
+        }
+        .dark .text-gray-800 {
+            color: #ffffff;
+        }
+        .dark .text-gray-600 {
+            color: #9ca3af;
+        }
+        .dark .bg-gray-50 {
+            background-color: #374151;
+        }
+        .dark .border-gray-200 {
+            border-color: #4b5563;
+        }
+        .dark .sidebar {
+            background: rgba(31, 41, 55, 0.95);
+            border-right: 1px solid #374151;
+        }
+        .dark .sidebar-header {
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+        }
+        .dark .sidebar-item {
+            color: #e5e7eb;
+            border-color: transparent;
+        }
+        .dark .sidebar-item:hover {
+            background: rgba(59, 130, 246, 0.2);
+            color: #ffffff;
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+        .dark .sidebar-item.active {
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+            border-color: transparent;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Sidebar -->
+    <div class="fixed inset-y-0 left-0 sidebar bg-white shadow-lg" id="sidebar">
+        <div class="flex items-center justify-between h-16 sidebar-header">
+            <h1 class="text-2xl font-bold text-white sidebar-text">CineAI</h1>
+            <button id="sidebarToggle" class="text-white hover:text-gray-200">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        <nav class="mt-8">
+            <div class="px-4 mb-4">
+                <div class="flex items-center">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=random" alt="Admin" class="w-10 h-10 rounded-full">
+                    <div class="ml-3 sidebar-text">
+                        <p class="text-sm font-medium text-gray-800">Admin</p>
+                        <p class="text-xs text-gray-500" th:text="${email}">admin@cineai.com</p>
+                    </div>
+                </div>
+            </div>
+            <div class="px-4 space-y-2">
+                <a href="/admin/dashboard" class="sidebar-item flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                    <i class="fas fa-home w-6 sidebar-icon"></i>
+                    <span class="sidebar-text">Dashboard</span>
+                </a>
+                <a href="/admin/movies" class="sidebar-item flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                    <i class="fas fa-film w-6 sidebar-icon"></i>
+                    <span class="sidebar-text">Phim</span>
+                </a>
+                <a href="/admin/cinemas" class="sidebar-item flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                    <i class="fas fa-building w-6 sidebar-icon"></i>
+                    <span class="sidebar-text">Rạp chiếu</span>
+                </a>
+                <a href="/admin/showtimes" class="sidebar-item flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                    <i class="fas fa-clock w-6 sidebar-icon"></i>
+                    <span class="sidebar-text">Lịch chiếu</span>
+                </a>
+                <a href="/admin/bookings" class="sidebar-item flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                    <i class="fas fa-ticket-alt w-6 sidebar-icon"></i>
+                    <span class="sidebar-text">Đặt vé</span>
+                </a>
+                <a href="/admin/users" class="sidebar-item active flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                    <i class="fas fa-users w-6 sidebar-icon"></i>
+                    <span class="sidebar-text">Người dùng</span>
+                </a>
+                <a href="/admin/settings" class="sidebar-item flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                    <i class="fas fa-cog w-6 sidebar-icon"></i>
+                    <span class="sidebar-text">Cài đặt</span>
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content p-8">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800">Quản lý người dùng</h2>
+                <p class="text-gray-600">Danh sách người dùng hệ thống</p>
+            </div>
+        </div>
+
+        <!-- Alert Messages -->
+        <div th:if="${success}" class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+            <p th:text="${success}"></p>
+        </div>
+        <div th:if="${error}" class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            <p th:text="${error}"></p>
+        </div>
+
+        <!-- Search and Filter -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
+            <form th:action="@{/admin/users}" method="get" class="flex flex-col md:flex-row gap-4">
+                <div class="flex-1">
+                    <div class="relative">
+                        <input type="text" name="search" th:value="${searchQuery}" 
+                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                               placeholder="Tìm kiếm theo tên, email, số điện thoại...">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-filter mr-2"></i>Tìm kiếm
+                </button>
+            </form>
+        </div>
+
+        <!-- Users List -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div th:each="user : ${users}" class="bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in hover:shadow-2xl transition-all duration-300 border border-transparent hover:border-blue-200 transform hover:-translate-y-1">
+                <div class="p-6">
+                    <div class="flex items-center space-x-4 mb-6">
+                        <div class="relative">
+                            <img th:src="${user['profileImage'] != null ? user['profileImage'] : 'https://ui-avatars.com/api/?name=' + user['fullName'] + '&background=random'}" 
+                                 alt="User Avatar" class="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg">
+                            <div class="absolute -bottom-1 -right-1 bg-green-500 w-4 h-4 rounded-full border-2 border-white"></div>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-800" th:text="${user['fullName']}">User Name</h3>
+                            <p class="text-gray-600" th:text="${user['email']}">user@example.com</p>
+                            <p class="text-gray-500 text-sm" th:text="${user['phoneNumber']}">Phone Number</p>
+                        </div>
+                    </div>
+                    <div class="space-y-3 bg-gray-50 p-4 rounded-lg">
+                        <div class="flex items-center text-gray-600">
+                            <i class="fas fa-calendar-alt w-5 text-blue-500"></i>
+                            <div class="ml-2">
+                                <span class="text-sm font-medium">Ngày tạo:</span>
+                                <span class="text-sm block" th:text="${#strings.substring(user.createdAt, 0, 10) + ' ' + #strings.substring(user.createdAt, 11, 16)}">Created At</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center text-gray-600">
+                            <i class="fas fa-clock w-5 text-blue-500"></i>
+                            <div class="ml-2">
+                                <span class="text-sm font-medium">Đăng nhập cuối:</span>
+                                <span class="text-sm block" th:text="${#strings.substring(user.lastLogin, 0, 10) + ' ' + #strings.substring(user.lastLogin, 11, 16)}">Last Login</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-end space-x-3 mt-6">
+                        <a th:href="@{/admin/users/edit/{id}(id=${user.id})}" 
+                           class="p-2.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors duration-300 hover:scale-110">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <form th:action="@{/admin/users/delete/{id}(id=${user.id})}" 
+                              method="post" class="inline" 
+                              onsubmit="return confirm('Bạn có chắc chắn muốn xóa người dùng này?');">
+                            <button type="submit" class="p-2.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors duration-300 hover:scale-110">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.querySelector('.main-content');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebarItems = document.querySelectorAll('.sidebar-item');
+
+            // Check for saved sidebar state
+            const sidebarState = localStorage.getItem('sidebarState');
+            if (sidebarState === 'collapsed') {
+                sidebar.classList.add('collapsed');
+                mainContent.classList.add('expanded');
+            }
+
+            // Toggle sidebar
+            sidebarToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('collapsed');
+                mainContent.classList.toggle('expanded');
+                localStorage.setItem('sidebarState', 
+                    sidebar.classList.contains('collapsed') ? 'collapsed' : 'expanded'
+                );
+            });
+
+            // Active menu item
+            sidebarItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    sidebarItems.forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+
+            // Check for dark mode
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark');
+            }
+        });
+    </script>
+</body>
+</html> 
