@@ -1,21 +1,231 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8">
-  <title>Home</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineAI - Trang chủ</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .gradient-text {
+            background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .movie-card {
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        .movie-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .demo-banner {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+    </style>
 </head>
-<body class="bg-gray-100 h-screen flex items-center justify-center">
-<div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-  <h2 class="text-2xl font-bold mb-6 text-center">Welcome to Home</h2>
-  <p class="text-center">Hello, <span th:text="${fullName}"></span>! You are logged in as <span th:text="${role}"></span>.</p>
-  <a href="/logout" class="block text-center text-blue-500 hover:underline">Logout</a>
-</div>
-<script>
-  // Clear sessionStorage on logout
-  document.querySelector('a[href="/logout"]').addEventListener('click', function(e) {
-    sessionStorage.removeItem('idToken');
-  });
-</script>
+<body class="bg-gray-50">
+    <!-- Demo Banner -->
+    <div class="demo-banner text-white text-center py-2 font-medium">
+        <i class="fas fa-info-circle mr-2"></i>
+        Đây là trang demo người dùng - Chỉ dùng cho mục đích trình diễn
+    </div>
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <h1 class="text-3xl font-bold gradient-text">CineAI</h1>
+                <div class="flex items-center space-x-4">
+                    <div th:if="${session.fullName != null}" class="flex items-center space-x-4">
+                        <span class="text-gray-700">
+                            <i class="fas fa-user mr-2"></i>
+                            <span th:text="${session.fullName}">Tên người dùng</span>
+                        </span>
+                        <a href="/logout" class="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition">
+                            <i class="fas fa-sign-out-alt mr-2"></i>Đăng xuất
+                        </a>
+                    </div>
+                    <div th:if="${session.fullName == null}" class="flex items-center space-x-4">
+                        <a href="/login" class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition">
+                            <i class="fas fa-sign-in-alt mr-2"></i>Đăng nhập
+                        </a>
+                        <a href="/register" class="px-4 py-2 rounded-lg border border-blue-600 text-blue-600 hover:bg-blue-50 transition">
+                            <i class="fas fa-user-plus mr-2"></i>Đăng ký
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="bg-gradient-to-r from-blue-900 to-blue-700 text-white py-20">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="text-4xl font-bold mb-4">Khám phá thế giới điện ảnh</h2>
+            <p class="text-xl mb-8">Trải nghiệm phim ảnh với công nghệ AI tiên tiến</p>
+            <div class="flex justify-center space-x-4">
+                <button class="px-6 py-3 rounded-lg bg-white text-blue-600 font-medium hover:bg-gray-100 transition">
+                    <i class="fas fa-play mr-2"></i>Xem phim ngay
+                </button>
+                <button class="px-6 py-3 rounded-lg border border-white text-white font-medium hover:bg-white/10 transition">
+                    <i class="fas fa-info-circle mr-2"></i>Tìm hiểu thêm
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Movies -->
+    <section class="py-16">
+        <div class="container mx-auto px-4">
+            <h2 class="text-2xl font-bold mb-8 gradient-text">Phim đang chiếu</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Movie Card 1 -->
+                <div class="movie-card bg-white rounded-lg overflow-hidden">
+                    <img src="https://m.media-amazon.com/images/M/MV5BMTc5MDE2ODcwNV5BMl5BanBnXkFtZTgwMzI2NzQ2NzM@._V1_.jpg" alt="Movie" class="w-full h-64 object-cover">
+                    <div class="p-4">
+                        <h3 class="font-bold text-lg mb-2">Avengers: Endgame</h3>
+                        <p class="text-gray-600 text-sm mb-4">2h 30m • Hành động, Phiêu lưu</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-yellow-500">
+                                <i class="fas fa-star"></i> 9.5
+                            </span>
+                            <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                                Đặt vé
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Movie Card 2 -->
+                <div class="movie-card bg-white rounded-lg overflow-hidden">
+                    <img src="https://via.placeholder.com/300x450" alt="Movie" class="w-full h-64 object-cover">
+                    <div class="p-4">
+                        <h3 class="font-bold text-lg mb-2">Inception</h3>
+                        <p class="text-gray-600 text-sm mb-4">2h 28m • Khoa học viễn tưởng</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-yellow-500">
+                                <i class="fas fa-star"></i> 9.0
+                            </span>
+                            <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                                Đặt vé
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Movie Card 3 -->
+                <div class="movie-card bg-white rounded-lg overflow-hidden">
+                    <img src="https://via.placeholder.com/300x450" alt="Movie" class="w-full h-64 object-cover">
+                    <div class="p-4">
+                        <h3 class="font-bold text-lg mb-2">The Dark Knight</h3>
+                        <p class="text-gray-600 text-sm mb-4">2h 32m • Hành động, Tội phạm</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-yellow-500">
+                                <i class="fas fa-star"></i> 9.2
+                            </span>
+                            <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                                Đặt vé
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Movie Card 4 -->
+                <div class="movie-card bg-white rounded-lg overflow-hidden">
+                    <img src="https://via.placeholder.com/300x450" alt="Movie" class="w-full h-64 object-cover">
+                    <div class="p-4">
+                        <h3 class="font-bold text-lg mb-2">Interstellar</h3>
+                        <p class="text-gray-600 text-sm mb-4">2h 49m • Khoa học viễn tưởng</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-yellow-500">
+                                <i class="fas fa-star"></i> 8.9
+                            </span>
+                            <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                                Đặt vé
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="bg-gray-100 py-16">
+        <div class="container mx-auto px-4">
+            <h2 class="text-2xl font-bold mb-12 text-center gradient-text">Tại sao chọn CineAI?</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-lg text-center">
+                    <i class="fas fa-robot text-4xl text-blue-600 mb-4"></i>
+                    <h3 class="font-bold text-lg mb-2">AI Thông minh</h3>
+                    <p class="text-gray-600">Gợi ý phim phù hợp với sở thích của bạn</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg text-center">
+                    <i class="fas fa-ticket-alt text-4xl text-blue-600 mb-4"></i>
+                    <h3 class="font-bold text-lg mb-2">Đặt vé dễ dàng</h3>
+                    <p class="text-gray-600">Quy trình đặt vé nhanh chóng và tiện lợi</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg text-center">
+                    <i class="fas fa-film text-4xl text-blue-600 mb-4"></i>
+                    <h3 class="font-bold text-lg mb-2">Phim chất lượng</h3>
+                    <p class="text-gray-600">Trải nghiệm phim với chất lượng hình ảnh tốt nhất</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4">CineAI</h3>
+                    <p class="text-gray-400">Nền tảng đặt vé xem phim thông minh</p>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Liên kết</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition">Trang chủ</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition">Phim</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition">Rạp chiếu</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition">Liên hệ</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Hỗ trợ</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition">FAQ</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition">Điều khoản</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition">Chính sách</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Theo dõi chúng tôi</h4>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-white transition">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2024 CineAI. Tất cả quyền được bảo lưu.</p>
+            </div>
+        </div>
+    </footer>
 </body>
 </html>

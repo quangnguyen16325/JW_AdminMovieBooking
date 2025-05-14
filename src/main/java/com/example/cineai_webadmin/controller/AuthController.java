@@ -46,6 +46,11 @@ public class AuthController {
         this.userService = userService;
     }
 
+    @GetMapping("/")
+    public String index() {
+        return "redirect:/home";
+    }
+
     @GetMapping("/register")
     public String showRegisterForm(Model model) {
         model.addAttribute("registerRequest", new RegisterRequest());
@@ -78,28 +83,26 @@ public class AuthController {
     public String home(HttpSession session, Model model) {
         String userId = (String) session.getAttribute("userId");
         String role = (String) session.getAttribute("role");
-        if (userId == null || !"user".equals(role)) {
-            logger.warn("Unauthorized access to /home, userId: {}, role: {}", userId, role);
-            return "redirect:/login?error=Unauthorized";
-        }
-        try {
-            Firestore db = FirestoreClient.getFirestore();
-            DocumentSnapshot userDoc = db.collection("users").document(userId).get().get();
-            if (!userDoc.exists()) {
-                logger.warn("User {} not found in Firestore", userId);
-                return "redirect:/login?error=User not found";
+        
+        // Nếu đã đăng nhập, cập nhật thông tin người dùng
+        if (userId != null && "user".equals(role)) {
+            try {
+                Firestore db = FirestoreClient.getFirestore();
+                DocumentSnapshot userDoc = db.collection("users").document(userId).get().get();
+                if (userDoc.exists()) {
+                    // Update lastLogin
+                    db.collection("users").document(userId).update("lastLogin", Timestamp.now());
+                    session.setAttribute("fullName", userDoc.getString("fullName"));
+                    logger.info("User {} with role {} accessed /home", userId, role);
+                    model.addAttribute("role", role);
+                    model.addAttribute("fullName", userDoc.getString("fullName"));
+                }
+            } catch (Exception e) {
+                logger.error("Error accessing /home for user {}: {}", userId, e.getMessage());
             }
-            // Update lastLogin
-            db.collection("users").document(userId).update("lastLogin", Timestamp.now());
-            session.setAttribute("fullName", userDoc.getString("fullName"));
-            logger.info("User {} with role {} accessed /home", userId, role);
-            model.addAttribute("role", role);
-            model.addAttribute("fullName", userDoc.getString("fullName"));
-            return "home";
-        } catch (Exception e) {
-            logger.error("Error accessing /home for user {}: {}", userId, e.getMessage());
-            return "redirect:/login?error=Server error";
         }
+        
+        return "home";
     }
 
     @GetMapping("/admin/dashboard")
